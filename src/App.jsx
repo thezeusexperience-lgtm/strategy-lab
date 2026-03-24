@@ -739,5 +739,19 @@ export default function StrategyLab(){
           </div>
         </div>}
       </div>
+
+      {/* ═══ FOOTER ═══ */}
+      <div style={{borderTop:`1px solid ${C.bd}`,padding:"32px 24px",textAlign:"center",marginTop:40}}>
+        <div style={{maxWidth:600,margin:"0 auto"}}>
+          <div style={{fontSize:18,fontStyle:"italic",color:C.tm,lineHeight:1.7,marginBottom:20,fontFamily:SA,fontWeight:500}}>
+            "If you are feeling down and thinking of giving up, then you absolutely should, you fkn pussy"
+          </div>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+            <span style={{fontSize:13,color:C.td}}>Built by</span>
+            <a href="https://x.com/barneyxbt" target="_blank" rel="noopener noreferrer" style={{color:C.ac,fontSize:14,fontWeight:700,textDecoration:"none",fontFamily:SA}}>@barneyxbt</a>
+          </div>
+        </div>
+      </div>
+
   </div>
 }
