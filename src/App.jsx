@@ -740,21 +740,60 @@ export default function StrategyLab(){
 
         {/* RISK LAB */}
         {pg==="rk"&&<div className="fi">
-          <h2 style={{fontSize:18,fontWeight:700,margin:"0 0 4px"}}>Risk <span style={{color:C.am}}>Lab</span></h2>
-          <p style={{fontFamily:MO,fontSize:10,color:C.td,margin:"0 0 14px"}}>Kelly criterion · Position sizing · Derived from your backtest</p>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:8,marginBottom:16}}>
-            <Stat label="Kelly Criterion" value={`${riskCalc.kelly}%`} sub="Optimal bet size" color={riskCalc.kelly>0?C.g:C.r}/><Stat label="Half Kelly" value={`${riskCalc.hk}%`} sub="Recommended" color={C.cy}/><Stat label="Reward:Risk" value={`${riskCalc.rr}:1`} color={riskCalc.rr>=2?C.g:C.am}/>
+          <h2 style={{fontSize:24,fontWeight:800,margin:"0 0 4px",letterSpacing:"-.02em"}}>Risk <span style={{color:C.am}}>Lab</span></h2>
+          <p style={{fontFamily:SA,fontSize:14,color:C.td,margin:"0 0 20px"}}>Kelly criterion · Position sizing · Derived from your backtest</p>
+
+          {/* Editable Account Balance */}
+          <div style={{background:C.sf,border:`1px solid ${C.bd}`,borderRadius:16,padding:20,marginBottom:20}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+              <div style={{fontSize:16,fontWeight:700}}>Your Account Balance</div>
+              {portfolio&&<button onClick={()=>setCfg(c=>({...c,cap:portfolio.accountValue}))} style={{background:C.gd,color:C.g,border:`1px solid ${C.g}30`,borderRadius:10,padding:"8px 16px",fontSize:13,fontFamily:SA,fontWeight:600,cursor:"pointer"}}> Sync ${portfolio.accountValue.toLocaleString()}</button>}
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontSize:28,fontWeight:800,color:C.td}}>$</span>
+              <input type="number" value={cfg.cap} onChange={e=>setCfg(c=>({...c,cap:+e.target.value}))} min={1} style={{background:C.s2,color:C.tx,border:`1px solid ${C.bd}`,borderRadius:12,padding:"14px 18px",fontFamily:SA,fontSize:28,fontWeight:800,width:"100%",outline:"none",letterSpacing:"-0.02em"}}/>
+            </div>
+            {!portfolio&&<div style={{fontSize:13,color:C.td,marginTop:8}}>Enter your real balance. Connect your exchange to sync automatically.</div>}
           </div>
-          <div style={{background:C.sf,border:`1px solid ${C.bd}`,borderRadius:10,padding:16,marginBottom:14}}>
-            <div style={{fontSize:12,fontWeight:600,color:C.tm,marginBottom:10}}>Position Size Calculator</div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:12}}>
-              {[["Account",`$${cfg.cap.toLocaleString()}`],["Kelly Optimal",`$${(cfg.cap*Math.max(riskCalc.kelly,0)/100).toFixed(0)}`,C.g],["Half Kelly",`$${(cfg.cap*Math.max(riskCalc.hk,0)/100).toFixed(0)}`,C.cy],["1% Risk",`$${(cfg.cap*.01).toFixed(0)}`,C.am],["2% Risk",`$${(cfg.cap*.02).toFixed(0)}`]].map(([l,v,c],i)=><div key={i}><div style={{fontSize:9,color:C.td,fontFamily:MO,marginBottom:3}}>{l}</div><div style={{fontSize:16,fontWeight:700,fontFamily:MO,color:c||C.tx}}>{v}</div></div>)}
+
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:12,marginBottom:20}}>
+            <Stat label="Kelly Criterion" value={`${riskCalc.kelly}%`} sub="Optimal bet size" color={riskCalc.kelly>0?C.g:C.r}/>
+            <Stat label="Half Kelly" value={`${riskCalc.hk}%`} sub="Recommended" color={C.cy}/>
+            <Stat label="Reward:Risk" value={`${riskCalc.rr}:1`} color={riskCalc.rr>=2?C.g:C.am}/>
+          </div>
+
+          <div style={{background:C.sf,border:`1px solid ${C.bd}`,borderRadius:16,padding:20,marginBottom:20}}>
+            <div style={{fontSize:16,fontWeight:700,marginBottom:14}}>Position Size Calculator</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:16}}>
+              {[
+                ["Your Account",`$${cfg.cap.toLocaleString()}`,C.tx],
+                ["Kelly Optimal",`$${(cfg.cap*Math.max(riskCalc.kelly,0)/100).toLocaleString(undefined,{maximumFractionDigits:0})}`,C.g],
+                ["Half Kelly (Safer)",`$${(cfg.cap*Math.max(riskCalc.hk,0)/100).toLocaleString(undefined,{maximumFractionDigits:0})}`,C.cy],
+                ["1% Risk (Conservative)",`$${(cfg.cap*.01).toLocaleString(undefined,{maximumFractionDigits:0})}`,C.am],
+                ["2% Risk (Standard)",`$${(cfg.cap*.02).toLocaleString(undefined,{maximumFractionDigits:0})}`]
+              ].map(([l,v,c],i)=><div key={i}>
+                <div style={{fontSize:12,color:C.td,fontWeight:600,marginBottom:4}}>{l}</div>
+                <div style={{fontSize:22,fontWeight:800,fontFamily:SA,color:c||C.tx,letterSpacing:"-0.02em"}}>{v}</div>
+              </div>)}
             </div>
           </div>
-          <div style={{background:C.sf,border:`1px solid ${C.bd}`,borderRadius:10,padding:16}}>
-            <div style={{fontSize:12,fontWeight:600,color:C.tm,marginBottom:10}}>Strategy Health</div>
-            <div style={{display:"grid",gap:8}}>
-              {[["Edge",s.exp>0?(s.pf>=2?"Strong":"Moderate"):"None",s.exp>0?(s.pf>=2?C.g:C.am):C.r,`Exp: $${s.exp} · PF: ${s.pf}`],["Consistency",s.wr>=55?"High":s.wr>=45?"Med":"Low",s.wr>=55?C.g:s.wr>=45?C.am:C.r,`WR: ${s.wr}%`],["Risk",Math.abs(s.mdd)<10?"Conservative":Math.abs(s.mdd)<25?"Moderate":"Aggressive",Math.abs(s.mdd)<10?C.g:Math.abs(s.mdd)<25?C.am:C.r,`DD: ${s.mdd}% · Sharpe: ${s.sh}`],["Sample",s.n>=30?"Sufficient":s.n>=15?"Borderline":"Insufficient",s.n>=30?C.g:s.n>=15?C.am:C.r,`${s.n} trades`]].map(([l,sc,co,dt],i)=><div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",background:C.s2,borderRadius:6}}><div style={{width:7,height:7,borderRadius:"50%",background:co}}/><div style={{minWidth:80}}><div style={{fontFamily:MO,fontSize:11,fontWeight:600,color:co}}>{sc}</div><div style={{fontSize:9,color:C.td}}>{l}</div></div><div style={{fontFamily:MO,fontSize:9,color:C.tm}}>{dt}</div></div>)}
+
+          <div style={{background:C.sf,border:`1px solid ${C.bd}`,borderRadius:16,padding:20}}>
+            <div style={{fontSize:16,fontWeight:700,marginBottom:14}}>Strategy Health</div>
+            <div style={{display:"grid",gap:10}}>
+              {[
+                ["Edge Strength",s.exp>0?(s.pf>=2?"Strong":"Moderate"):"None",s.exp>0?(s.pf>=2?C.g:C.am):C.r,`Expectancy: $${s.exp} · Profit Factor: ${s.pf}`],
+                ["Consistency",s.wr>=55?"High":s.wr>=45?"Medium":"Low",s.wr>=55?C.g:s.wr>=45?C.am:C.r,`Win Rate: ${s.wr}%`],
+                ["Risk Profile",Math.abs(s.mdd)<10?"Conservative":Math.abs(s.mdd)<25?"Moderate":"Aggressive",Math.abs(s.mdd)<10?C.g:Math.abs(s.mdd)<25?C.am:C.r,`Max Drawdown: ${s.mdd}% · Sharpe: ${s.sh}`],
+                ["Sample Size",s.n>=30?"Sufficient":s.n>=15?"Borderline":"Insufficient",s.n>=30?C.g:s.n>=15?C.am:C.r,`${s.n} trades (min recommended: 30)`]
+              ].map(([l,sc,co,dt],i)=><div key={i} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",background:C.s2,borderRadius:12}}>
+                <div style={{width:10,height:10,borderRadius:"50%",background:co,flexShrink:0}}/>
+                <div style={{minWidth:100}}>
+                  <div style={{fontFamily:SA,fontSize:15,fontWeight:700,color:co}}>{sc}</div>
+                  <div style={{fontSize:12,color:C.td,fontWeight:500}}>{l}</div>
+                </div>
+                <div style={{fontFamily:MO,fontSize:12,color:C.tm}}>{dt}</div>
+              </div>)}
             </div>
           </div>
         </div>}
