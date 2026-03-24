@@ -421,59 +421,57 @@ export default function StrategyLab(){
 
   return <div style={{background:C.bg,minHeight:"100vh",color:C.tx,fontFamily:SA,display:"flex",flexDirection:"column"}}>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
-    <style>{`*{box-sizing:border-box;scrollbar-width:thin;scrollbar-color:${C.s3} transparent}::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:${C.s3};border-radius:6px}::selection{background:${C.ac}40}@keyframes fi{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}.fi{animation:fi .4s cubic-bezier(.16,1,.3,1) both}@keyframes pu{0%,100%{opacity:.3}50%{opacity:1}}button{transition:all .15s}button:hover{opacity:.85}button:active{transform:scale(.98)}textarea,input[type=text],input[type=password],input[type=number]{font-size:16px}@media(min-width:600px){textarea,input[type=text],input[type=password],input[type=number]{font-size:14px}}`}</style>
+    <style>{`*{box-sizing:border-box;scrollbar-width:thin;scrollbar-color:${C.s3} transparent}::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:${C.s3};border-radius:6px}::selection{background:${C.ac}40}@keyframes fi{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}.fi{animation:fi .4s cubic-bezier(.16,1,.3,1) both}@keyframes pu{0%,100%{opacity:.3}50%{opacity:1}}button{transition:all .15s}button:hover{opacity:.85}button:active{transform:scale(.98)}textarea,input[type=text],input[type=password],input[type=number]{font-size:16px}.nav-scroll{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch}.nav-scroll::-webkit-scrollbar{display:none}.chart-scroll{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:16px;padding-bottom:4px}.chart-scroll::-webkit-scrollbar{display:none}@media(min-width:600px){textarea,input[type=text],input[type=password],input[type=number]{font-size:14px}}@media(max-width:768px){.hide-mobile{display:none !important}.hdr-wrap{flex-direction:column !important;align-items:stretch !important;height:auto !important;padding:12px 16px !important;gap:10px !important;position:relative}.hdr-top{display:flex;justify-content:space-between;align-items:center}.hdr-assets{width:100%}.hdr-assets select{flex:1;min-width:0;font-size:13px !important;padding:8px 10px !important}.main-p{padding:14px !important}.stat-g{grid-template-columns:repeat(2,1fr) !important;gap:8px !important}.stat-g>div{padding:12px 14px !important}.stat-val{font-size:20px !important}.stat-val-big{font-size:26px !important}.nav-btn{padding:10px 14px !important;font-size:13px !important;border-radius:10px !important}.foot-links{gap:8px !important}.foot-links a{padding:6px 10px !important;font-size:12px !important}.bal-input{font-size:20px !important;padding:10px 14px !important}.page-h{font-size:20px !important}.sect-h{font-size:14px !important}}@media(max-width:480px){.stat-g{grid-template-columns:1fr 1fr !important}.nav-btn{padding:8px 10px !important;font-size:12px !important}.stat-val-big{font-size:22px !important}}`}</style>
 
     {/* ═══ HEADER ═══ */}
-    <div style={{background:C.sf,borderBottom:`1px solid ${C.bd}`,padding:"12px 24px",display:"flex",alignItems:"center",gap:16,flexShrink:0,flexWrap:"wrap"}}>
-      <div style={{display:"flex",alignItems:"center",gap:12}}>
-        <img src={LOGO} alt="Strategy Lab" style={{width:40,height:40,borderRadius:12}}/>
+    <div className="hdr-wrap" style={{background:C.sf,borderBottom:`1px solid ${C.bd}`,padding:"12px 24px",display:"flex",alignItems:"center",gap:16,flexShrink:0,flexWrap:"wrap",position:"relative"}}>
+      <div className="hdr-top" style={{display:"flex",alignItems:"center",gap:12}}>
+        <img src={LOGO} alt="Strategy Lab" style={{width:36,height:36,borderRadius:10}}/>
         <div>
-          <div style={{fontSize:20,fontWeight:800,letterSpacing:"-.03em",lineHeight:1}}>Strategy <span style={{color:C.g}}>Lab</span></div>
-          <div style={{fontSize:11,color:C.td,fontWeight:500,marginTop:2}}>Backtest · Simulate · Optimize</div>
+          <div style={{fontSize:18,fontWeight:800,letterSpacing:"-.03em",lineHeight:1}}>Strategy <span style={{color:C.g}}>Lab</span></div>
+          <div className="hide-mobile" style={{fontSize:11,color:C.td,fontWeight:500,marginTop:2}}>Backtest · Simulate · Optimize</div>
         </div>
       </div>
 
-      <div style={{width:1,height:32,background:C.bd,margin:"0 4px"}}/>
+      <div className="hide-mobile" style={{width:1,height:28,background:C.bd,margin:"0 4px"}}/>
 
-      {/* Asset Picker — Searchable */}
-      <div style={{display:"flex",gap:8,alignItems:"center"}}>
-        <div ref={assetDropRef} style={{position:"relative"}}>
-          <button onClick={()=>setShowAssetDrop(!showAssetDrop)} style={{background:C.s2,color:C.tx,border:`1px solid ${showAssetDrop?C.ac:C.bd}`,borderRadius:12,padding:"10px 16px",fontFamily:SA,fontSize:15,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:8,minWidth:180}}>
+      {/* Asset Picker */}
+      <div className="hdr-assets" style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+        <div ref={assetDropRef} style={{position:"relative",flex:1,minWidth:140}}>
+          <button onClick={()=>setShowAssetDrop(!showAssetDrop)} style={{background:C.s2,color:C.tx,border:`1px solid ${showAssetDrop?C.ac:C.bd}`,borderRadius:12,padding:"8px 14px",fontFamily:SA,fontSize:14,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:8,width:"100%"}}>
             <span>{ASSETS.find(a=>a.id===asset)?.sym||"BTC"}</span>
-            <span style={{color:C.td,fontWeight:500,fontSize:13}}>{ASSETS.find(a=>a.id===asset)?.name||"Bitcoin"}</span>
+            <span className="hide-mobile" style={{color:C.td,fontWeight:500,fontSize:13}}>{ASSETS.find(a=>a.id===asset)?.name||"Bitcoin"}</span>
             <span style={{color:C.td,fontSize:12,marginLeft:"auto"}}>▾</span>
           </button>
-          {showAssetDrop&&<div style={{position:"absolute",top:"100%",left:0,marginTop:6,background:C.sf,border:`1px solid ${C.bd}`,borderRadius:16,width:320,maxHeight:420,overflow:"hidden",zIndex:999,boxShadow:"0 16px 48px rgba(0,0,0,.6)"}}>
-            <div style={{padding:12,borderBottom:`1px solid ${C.bd}`}}>
+          {showAssetDrop&&<div style={{position:"absolute",top:"100%",left:0,marginTop:6,background:C.sf,border:`1px solid ${C.bd}`,borderRadius:16,width:"min(320px,90vw)",maxHeight:380,overflow:"hidden",zIndex:999,boxShadow:"0 16px 48px rgba(0,0,0,.6)"}}>
+            <div style={{padding:10,borderBottom:`1px solid ${C.bd}`}}>
               <input value={assetSearch} onChange={e=>setAssetSearch(e.target.value)} placeholder="Search any coin..." autoFocus style={{width:"100%",background:C.s2,color:C.tx,border:`1px solid ${C.bd}`,borderRadius:10,padding:"10px 14px",fontFamily:SA,fontSize:14,outline:"none"}}/>
             </div>
-            <div style={{overflowY:"auto",maxHeight:340}}>
-              {/* Search results first */}
+            <div style={{overflowY:"auto",maxHeight:300}}>
               {searchResults.length>0&&<><div style={{padding:"8px 14px",fontSize:11,color:C.td,fontWeight:600,textTransform:"uppercase",letterSpacing:".06em"}}>Search Results</div>
               {searchResults.map(a=><button key={a.id} onClick={()=>{setAsset(a.id);setShowAssetDrop(false);setAssetSearch("")}} style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:asset===a.id?C.ac+"15":"transparent",border:"none",color:C.tx,cursor:"pointer",fontFamily:SA,fontSize:14,textAlign:"left"}}>
-                <span style={{fontWeight:700,minWidth:60}}>{a.sym}</span><span style={{color:C.tm}}>{a.name}</span>
+                <span style={{fontWeight:700,minWidth:50}}>{a.sym}</span><span style={{color:C.tm}}>{a.name}</span>
               </button>)}
               <div style={{height:1,background:C.bd,margin:"4px 0"}}/></>}
-              {/* Default list (filtered) */}
               {ASSETS.filter(a=>!assetSearch||a.name.toLowerCase().includes(assetSearch.toLowerCase())||a.sym.toLowerCase().includes(assetSearch.toLowerCase())).map(a=><button key={a.id} onClick={()=>{setAsset(a.id);setShowAssetDrop(false);setAssetSearch("")}} style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:asset===a.id?C.ac+"15":"transparent",border:"none",color:C.tx,cursor:"pointer",fontFamily:SA,fontSize:14,textAlign:"left"}}>
-                <span style={{fontWeight:700,minWidth:60}}>{a.sym}</span><span style={{color:C.tm}}>{a.name}</span>
+                <span style={{fontWeight:700,minWidth:50}}>{a.sym}</span><span style={{color:C.tm}}>{a.name}</span>
                 {asset===a.id&&<span style={{marginLeft:"auto",color:C.ac}}>✓</span>}
               </button>)}
             </div>
           </div>}
         </div>
-        <select value={tfDays} onChange={e=>setTfDays(+e.target.value)} style={{background:C.s2,color:C.tx,border:`1px solid ${C.bd}`,borderRadius:12,padding:"10px 14px",fontFamily:SA,fontSize:14,fontWeight:600,outline:"none",cursor:"pointer"}}>
+        <select value={tfDays} onChange={e=>setTfDays(+e.target.value)} style={{background:C.s2,color:C.tx,border:`1px solid ${C.bd}`,borderRadius:12,padding:"8px 12px",fontFamily:SA,fontSize:14,fontWeight:600,outline:"none",cursor:"pointer"}}>
           {TF_DAYS.map(t=><option key={t.v} value={t.v}>{t.l}</option>)}
         </select>
-        {dataLoading?<span style={{fontFamily:SA,fontSize:13,color:C.am,fontWeight:600}}>Loading...</span>
-        :<span style={{fontSize:12,fontWeight:600,color:dataSource==="live"?C.g:C.td,background:dataSource==="live"?C.gd:"transparent",padding:"6px 12px",borderRadius:20}}>{dataSource==="live"?"● Live Data":"○ Synthetic"}</span>}
-        <button onClick={()=>loadData(asset,tfDays)} title="Refresh" style={{background:C.s2,border:`1px solid ${C.bd}`,borderRadius:10,padding:"8px 12px",color:C.tm,fontSize:16,cursor:"pointer",lineHeight:1}}>↻</button>
+        {dataLoading?<span style={{fontFamily:SA,fontSize:12,color:C.am,fontWeight:600}}>Loading...</span>
+        :<span className="hide-mobile" style={{fontSize:12,fontWeight:600,color:dataSource==="live"?C.g:C.td,background:dataSource==="live"?C.gd:"transparent",padding:"5px 10px",borderRadius:20}}>{dataSource==="live"?"● Live":"○ Synthetic"}</span>}
+        <button onClick={()=>loadData(asset,tfDays)} title="Refresh" style={{background:C.s2,border:`1px solid ${C.bd}`,borderRadius:10,padding:"7px 10px",color:C.tm,fontSize:15,cursor:"pointer",lineHeight:1}}>↻</button>
       </div>
 
-      <div style={{flex:1}}/>
+      <div style={{flex:1}} className="hide-mobile"/>
 
-      {/* Import/Export */}
-      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+      {/* Import/Export — hidden on mobile */}
+      <div className="hide-mobile" style={{display:"flex",gap:8,alignItems:"center"}}>
         <input ref={importRef} type="file" accept=".json" onChange={importData} style={{display:"none"}}/>
         <button onClick={()=>importRef.current?.click()} style={{background:C.s2,border:`1px solid ${C.bd}`,borderRadius:10,padding:"8px 14px",color:C.tm,fontFamily:SA,fontSize:13,fontWeight:600,cursor:"pointer"}}>↑ Import</button>
         <button onClick={exportData} style={{background:C.s2,border:`1px solid ${C.bd}`,borderRadius:10,padding:"8px 14px",color:C.tm,fontFamily:SA,fontSize:13,fontWeight:600,cursor:"pointer"}}>↓ Export</button>
@@ -488,14 +486,14 @@ export default function StrategyLab(){
     </div>
 
     {/* ═══ NAVIGATION ═══ */}
-    <div style={{background:C.bg,padding:"12px 24px",display:"flex",gap:6,overflowX:"auto",flexShrink:0}}>
-      {NAV.map(n=><button key={n.id} onClick={()=>setPg(n.id)} style={{background:pg===n.id?C.ac:C.sf,color:pg===n.id?"#fff":C.tm,border:pg===n.id?"none":`1px solid ${C.bd}`,borderRadius:12,padding:"12px 24px",fontSize:15,fontFamily:SA,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:8}}>
-        <span style={{fontSize:16}}>{n.icon}</span>{n.l}
+    <div className="nav-scroll" style={{background:C.bg,padding:"12px 24px",flexShrink:0}}>
+      {NAV.map(n=><button key={n.id} className="nav-btn" onClick={()=>setPg(n.id)} style={{background:pg===n.id?C.ac:C.sf,color:pg===n.id?"#fff":C.tm,border:pg===n.id?"none":`1px solid ${C.bd}`,borderRadius:12,padding:"12px 24px",fontSize:15,fontFamily:SA,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+        <span>{n.icon}</span><span className="nav-label">{n.l}</span>
       </button>)}
     </div>
 
     {/* ═══ MAIN CONTENT ═══ */}
-    <div style={{flex:1,overflowY:"auto",padding:"24px",maxWidth:1400,width:"100%",margin:"0 auto"}}>
+    <div className="main-p" style={{flex:1,overflowY:"auto",padding:"24px",maxWidth:1400,width:"100%",margin:"0 auto"}}>
 
       {/* STRATEGY BUILDER (collapsible, always accessible) */}
       {pg==="bt"&&<>
@@ -526,7 +524,7 @@ export default function StrategyLab(){
             </div>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <span style={{fontSize:24,fontWeight:800,color:C.td}}>$</span>
-              <input type="number" value={cfg.cap} onChange={e=>setCfg(c=>({...c,cap:+e.target.value}))} min={1} style={{background:C.sf,color:C.tx,border:`1px solid ${C.bd}`,borderRadius:12,padding:"12px 16px",fontFamily:SA,fontSize:24,fontWeight:800,width:"100%",outline:"none",letterSpacing:"-0.02em"}}/>
+              <input type="number" value={cfg.cap} onChange={e=>setCfg(c=>({...c,cap:+e.target.value}))} min={1} className="bal-input" style={{background:C.sf,color:C.tx,border:`1px solid ${C.bd}`,borderRadius:12,padding:"12px 16px",fontFamily:SA,fontSize:24,fontWeight:800,width:"100%",outline:"none",letterSpacing:"-0.02em"}}/>
             </div>
             {!portfolio&&<div style={{fontSize:12,color:C.td,marginTop:6}}>Enter your real account balance for accurate backtesting. Or connect your exchange on the Exchange tab to sync automatically.</div>}
           </div>
@@ -545,10 +543,10 @@ export default function StrategyLab(){
         <div style={{marginBottom:8,fontFamily:MO,fontSize:13,color:C.td}}>{ASSETS.find(a=>a.id===asset)?.sym}/USD · {data.length} candles · {data[0]?.date} → {data[data.length-1]?.date}</div>
 
         {/* Hero Stats */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:12,marginBottom:24}}>
+        <div className="stat-g" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:12,marginBottom:24}}>
           <Stat label="Total Return" value={`${s.ret>0?"+":""}${s.ret}%`} sub={`$${cfg.cap.toLocaleString()} → $${s.fin.toLocaleString()}`} color={rc} big/>          <Stat label="Win Rate" value={`${s.wr}%`} sub={`${s.wn}W / ${s.ls}L`} color={s.wr>=50?C.g:C.am}/><Stat label="Profit Factor" value={s.pf>=999?"∞":s.pf} color={s.pf>=1.5?C.g:s.pf>=1?C.am:C.r}/><Stat label="Sharpe" value={s.sh} color={s.sh>=1?C.g:C.am}/><Stat label="Max Drawdown" value={`${s.mdd}%`} color={C.r}/><Stat label="Expectancy" value={`$${s.exp}`} sub="per trade" color={s.exp>0?C.g:C.r}/><Stat label="Avg Hold" value={`${s.ah}d`} sub={`${s.n} trades`}/>
           </div>
-          <div style={{display:"flex",gap:8,marginBottom:16}}>{[["eq","Equity Curve"],["dd","Drawdown"],["pr","Price + Trades"],["di","P&L Distribution"]].map(([id,l])=><Btn key={id} active={ct===id} onClick={()=>setCt(id)} style={{fontSize:14,borderRadius:12,padding:"10px 20px"}}>{l}</Btn>)}</div>
+          <div className="chart-scroll" style={{display:"flex",gap:8,marginBottom:16}}>{[["eq","Equity Curve"],["dd","Drawdown"],["pr","Price + Trades"],["di","P&L Distribution"]].map(([id,l])=><Btn key={id} active={ct===id} onClick={()=>setCt(id)} style={{fontSize:14,borderRadius:12,padding:"10px 20px",flexShrink:0}}>{l}</Btn>)}</div>
           <div style={{background:C.sf,border:`1px solid ${C.bd}`,borderRadius:20,padding:24,marginBottom:20}}>
             {ct==="eq"&&<ResponsiveContainer width="100%" height={300}><AreaChart data={res.eq}><defs><linearGradient id="eg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={rc} stopOpacity={.3}/><stop offset="100%" stopColor={rc} stopOpacity={.02}/></linearGradient></defs><CartesianGrid stroke={C.bd} strokeDasharray="3 3"/><XAxis dataKey="ds" tick={{fill:C.td,fontSize:9,fontFamily:MO}} interval="preserveStartEnd" minTickGap={50}/><YAxis tick={{fill:C.td,fontSize:9,fontFamily:MO}} tickFormatter={v=>`$${(v/1000).toFixed(1)}k`}/><Tooltip content={<TT/>}/><Area type="monotone" dataKey="eq" stroke={rc} fill="url(#eg)" strokeWidth={2} dot={false} name="Equity"/><ReferenceLine y={cfg.cap} stroke={C.td} strokeDasharray="5 5"/></AreaChart></ResponsiveContainer>}
             {ct==="dd"&&<ResponsiveContainer width="100%" height={300}><AreaChart data={res.eq}><defs><linearGradient id="dg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.r} stopOpacity={.05}/><stop offset="100%" stopColor={C.r} stopOpacity={.4}/></linearGradient></defs><CartesianGrid stroke={C.bd} strokeDasharray="3 3"/><XAxis dataKey="ds" tick={{fill:C.td,fontSize:9,fontFamily:MO}} interval="preserveStartEnd" minTickGap={50}/><YAxis tick={{fill:C.td,fontSize:9,fontFamily:MO}} tickFormatter={v=>`${v}%`}/><Tooltip content={<TT/>}/><Area type="monotone" dataKey="dd" stroke={C.r} fill="url(#dg)" strokeWidth={2} dot={false} name="DD%"/></AreaChart></ResponsiveContainer>}
@@ -564,7 +562,7 @@ export default function StrategyLab(){
           <h2 style={{fontSize:18,fontWeight:700,margin:"0 0 4px",letterSpacing:"-.02em"}}>Monte Carlo Simulation</h2>
           <p style={{fontFamily:MO,fontSize:10,color:C.td,margin:"0 0 14px"}}>1,000 randomized trade sequences · probability distribution of outcomes</p>
           {!mcRes?<div style={{background:C.sf,borderRadius:10,padding:30,textAlign:"center",color:C.td,fontFamily:MO,fontSize:12}}>Need ≥2 trades to simulate</div>:<>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:7,marginBottom:14}}>
+          <div className="stat-g" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:7,marginBottom:14}}>
             <Stat label="Median" value={`$${mcRes.med.toLocaleString()}`} color={mcRes.med>cfg.cap?C.g:C.r}/><Stat label="5th %ile" value={`$${mcRes.p5f.toLocaleString()}`} sub="Worst realistic" color={C.r}/><Stat label="95th %ile" value={`$${mcRes.p95f.toLocaleString()}`} sub="Best realistic" color={C.g}/><Stat label="Prob Profit" value={`${mcRes.pp}%`} color={mcRes.pp>60?C.g:C.am}/><Stat label="Prob Ruin" value={`${mcRes.pr}%`} sub="50% loss" color={mcRes.pr<5?C.g:C.r}/>
           </div>
           <div style={{background:C.sf,border:`1px solid ${C.bd}`,borderRadius:10,padding:14}}>
@@ -622,7 +620,7 @@ export default function StrategyLab(){
 
             {portfolio&&<>
               {/* Account Value Hero */}
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:12,marginBottom:20}}>
+              <div className="stat-g" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:12,marginBottom:20}}>
                 <Stat label="Account Value" value={`$${portfolio.accountValue.toLocaleString()}`} color={C.tx} big/>
                 <Stat label="Unrealized P&L" value={`${portfolio.unrealizedPnl>=0?"+":""}$${portfolio.unrealizedPnl.toLocaleString()}`} color={portfolio.unrealizedPnl>=0?C.g:C.r} big/>
                 <Stat label="Available Balance" value={`$${portfolio.withdrawable.toLocaleString()}`} color={C.tx}/>
@@ -668,7 +666,7 @@ export default function StrategyLab(){
               <div style={{display:"flex",gap:6}}><span style={{fontFamily:MO,fontSize:10,color:C.g,background:C.gd,padding:"3px 8px",borderRadius:4}}>● Connected</span>
               <button onClick={()=>{saveExTrades([]);setExConnected(false)}} style={{background:C.rd,color:C.r,border:"none",borderRadius:4,padding:"3px 8px",fontFamily:MO,fontSize:10,cursor:"pointer"}}>Clear</button></div>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:7,marginBottom:14}}>
+            <div className="stat-g" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:7,marginBottom:14}}>
               <Stat label="Total P&L" value={`${exStats.tot>=0?"+":""}$${exStats.tot.toLocaleString()}`} color={exStats.tot>=0?C.g:C.r}/><Stat label="Total Fees" value={`$${exStats.fees.toLocaleString()}`} color={C.am}/><Stat label="Win Rate" value={`${exStats.wr}%`} sub={`${exStats.wn}W/${exStats.ls}L`} color={exStats.wr>=50?C.g:C.am}/><Stat label="Profit Factor" value={exStats.pf} color={exStats.pf>=1.5?C.g:C.r}/><Stat label="Avg Win" value={`$${exStats.aw}`} color={C.g}/><Stat label="Avg Loss" value={`$${exStats.al}`} color={C.r}/><Stat label="Total Trades" value={exStats.n}/>
             </div>
 
@@ -751,12 +749,12 @@ export default function StrategyLab(){
             </div>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <span style={{fontSize:28,fontWeight:800,color:C.td}}>$</span>
-              <input type="number" value={cfg.cap} onChange={e=>setCfg(c=>({...c,cap:+e.target.value}))} min={1} style={{background:C.s2,color:C.tx,border:`1px solid ${C.bd}`,borderRadius:12,padding:"14px 18px",fontFamily:SA,fontSize:28,fontWeight:800,width:"100%",outline:"none",letterSpacing:"-0.02em"}}/>
+              <input type="number" value={cfg.cap} onChange={e=>setCfg(c=>({...c,cap:+e.target.value}))} min={1} className="bal-input" style={{background:C.s2,color:C.tx,border:`1px solid ${C.bd}`,borderRadius:12,padding:"14px 18px",fontFamily:SA,fontSize:28,fontWeight:800,width:"100%",outline:"none",letterSpacing:"-0.02em"}}/>
             </div>
             {!portfolio&&<div style={{fontSize:13,color:C.td,marginTop:8}}>Enter your real balance. Connect your exchange to sync automatically.</div>}
           </div>
 
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:12,marginBottom:20}}>
+          <div className="stat-g" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:12,marginBottom:20}}>
             <Stat label="Kelly Criterion" value={`${riskCalc.kelly}%`} sub="Optimal bet size" color={riskCalc.kelly>0?C.g:C.r}/>
             <Stat label="Half Kelly" value={`${riskCalc.hk}%`} sub="Recommended" color={C.cy}/>
             <Stat label="Reward:Risk" value={`${riskCalc.rr}:1`} color={riskCalc.rr>=2?C.g:C.am}/>
@@ -764,7 +762,7 @@ export default function StrategyLab(){
 
           <div style={{background:C.sf,border:`1px solid ${C.bd}`,borderRadius:16,padding:20,marginBottom:20}}>
             <div style={{fontSize:16,fontWeight:700,marginBottom:14}}>Position Size Calculator</div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:16}}>
+            <div className="stat-g" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:16}}>
               {[
                 ["Your Account",`$${cfg.cap.toLocaleString()}`,C.tx],
                 ["Kelly Optimal",`$${(cfg.cap*Math.max(riskCalc.kelly,0)/100).toLocaleString(undefined,{maximumFractionDigits:0})}`,C.g],
@@ -805,7 +803,7 @@ export default function StrategyLab(){
           <div style={{fontSize:18,fontStyle:"italic",color:C.tm,lineHeight:1.7,marginBottom:24,fontFamily:SA,fontWeight:500}}>
             "If you are feeling down and thinking of giving up, then you absolutely should, you fkn pussy"
           </div>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:16,marginBottom:12}}>
+          <div className="foot-links" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:16,marginBottom:12}}>
             {/* X / Twitter */}
             <a href="https://x.com/barneyxbt" target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",gap:6,color:C.tm,textDecoration:"none",fontSize:14,fontWeight:600,fontFamily:SA,padding:"8px 14px",borderRadius:10,border:`1px solid ${C.bd}`,background:C.sf,transition:"all .15s"}} onMouseEnter={e=>e.currentTarget.style.borderColor=C.tx} onMouseLeave={e=>e.currentTarget.style.borderColor=C.bd}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
