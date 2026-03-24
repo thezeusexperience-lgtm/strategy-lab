@@ -121,13 +121,13 @@ return{cd,med:+finals[Math.floor(ns*.5)].toFixed(0),lo:+finals[0].toFixed(0),hi:
 
 // ── EXCHANGE PARSERS ──
 const EXCHANGES=[
-  {id:"binance",name:"Binance",url:"https://api.binance.com",note:"Spot & Futures"},
-  {id:"hyperliquid",name:"Hyperliquid",url:"https://api.hyperliquid.xyz",note:"Perps DEX"},
-  {id:"bybit",name:"Bybit",url:"https://api.bybit.com",note:"Derivatives"},
-  {id:"okx",name:"OKX",url:"https://www.okx.com",note:"Multi-asset"},
-  {id:"bitget",name:"Bitget",url:"https://api.bitget.com",note:"Copy Trading"},
-  {id:"kucoin",name:"KuCoin",url:"https://api.kucoin.com",note:"Spot & Futures"},
-  {id:"csv",name:"CSV Import",url:"",note:"Upload trade history"}
+  {id:"binance",name:"Binance",url:"https://api.binance.com",note:"Spot & Futures",logo:"https://assets.coingecko.com/markets/images/52/small/binance.jpg"},
+  {id:"hyperliquid",name:"Hyperliquid",url:"https://api.hyperliquid.xyz",note:"Perps DEX",logo:"https://assets.coingecko.com/markets/images/1262/small/hyperliquid-logo.jpeg"},
+  {id:"bybit",name:"Bybit",url:"https://api.bybit.com",note:"Derivatives",logo:"https://assets.coingecko.com/markets/images/698/small/bybit_spot.png"},
+  {id:"okx",name:"OKX",url:"https://www.okx.com",note:"Multi-asset",logo:"https://assets.coingecko.com/markets/images/96/small/WeChat_Image_20220117220452.png"},
+  {id:"bitget",name:"Bitget",url:"https://api.bitget.com",note:"Copy Trading",logo:"https://assets.coingecko.com/markets/images/540/small/Bitget.jpg"},
+  {id:"kucoin",name:"KuCoin",url:"https://api.kucoin.com",note:"Spot & Futures",logo:"https://assets.coingecko.com/markets/images/61/small/kucoin.jpg"},
+  {id:"csv",name:"CSV Import",url:"",note:"Upload trade history",logo:""}
 ];
 
 function parseCSVTrades(text){
@@ -362,7 +362,10 @@ export default function StrategyLab(){
     }else{clearInterval(portInterval.current)}
   },[exch,exKey,exConnected,fetchPortfolio]);
 
-  useEffect(()=>{try{const j=localStorage.getItem("sl_journal");if(j)setJEntries(JSON.parse(j))}catch(e){}try{const k=localStorage.getItem("sl_apikey");if(k)setApiKey(k)}catch(e){}try{const t=localStorage.getItem("sl_trades");if(t)setExTrades(JSON.parse(t))}catch(e){}try{const c=localStorage.getItem("sl_code_en");if(c)setCodeEn(c)}catch(e){}try{const c=localStorage.getItem("sl_code_ex");if(c)setCodeEx(c)}catch(e){}},[]);
+  useEffect(()=>{try{const j=localStorage.getItem("sl_journal");if(j)setJEntries(JSON.parse(j))}catch(e){}try{const k=localStorage.getItem("sl_apikey");if(k)setApiKey(k)}catch(e){}try{const t=localStorage.getItem("sl_trades");if(t)setExTrades(JSON.parse(t))}catch(e){}try{const c=localStorage.getItem("sl_code_en");if(c)setCodeEn(c)}catch(e){}try{const c=localStorage.getItem("sl_code_ex");if(c)setCodeEx(c)}catch(e){}try{const b=localStorage.getItem("sl_balance");if(b)setCfg(c=>({...c,cap:+b}))}catch(e){}},[]);
+
+  // Persist balance
+  useEffect(()=>{try{localStorage.setItem("sl_balance",String(cfg.cap))}catch(e){}},[cfg.cap]);
 
   const saveJ=useCallback((e)=>{setJEntries(e);try{localStorage.setItem("sl_journal",JSON.stringify(e))}catch(ex){}},[]);
   const saveExTrades=useCallback((t)=>{setExTrades(t);try{localStorage.setItem("sl_trades",JSON.stringify(t))}catch(ex){}},[]);
@@ -480,6 +483,7 @@ export default function StrategyLab(){
       <div style={{background:rc+"15",border:`1px solid ${rc}30`,borderRadius:20,padding:"8px 16px",display:"flex",alignItems:"center",gap:8}}>
         <div style={{width:8,height:8,borderRadius:"50%",background:rc}}/>
         <span style={{fontFamily:SA,fontSize:16,color:rc,fontWeight:800}}>{s.ret>0?"+":""}{s.ret}%</span>
+        <span style={{fontFamily:MO,fontSize:12,color:C.td}}>${s.fin.toLocaleString()}</span>
       </div>
     </div>
 
@@ -514,9 +518,22 @@ export default function StrategyLab(){
             {exR.map((r,i)=><CR key={i} c={r} onChange={v=>{setExR(p=>p.map((x,j)=>j===i?v:x));setPreset("custom")}} onRm={()=>{setExR(p=>p.filter((_,j)=>j!==i));setPreset("custom")}}/>)}</div>
           </>}
 
-          {/* Config */}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:12,marginTop:16}}>
-            {[["Capital ($)","cap",100,1e6],["Position Size %","sz",1,100],["Stop Loss %","sl",0,50],["Take Profit %","tp",0,100]].map(([l,k,mn,mx])=><div key={k}><div style={{fontSize:12,color:C.td,fontWeight:600,marginBottom:4}}>{l}</div><Num value={cfg[k]} onChange={v=>setCfg(c=>({...c,[k]:v}))} min={mn} max={mx} step={k==="sl"||k==="tp"?.5:1} style={{width:"100%",borderRadius:12}}/></div>)}
+          {/* Account Balance — prominent */}
+          <div style={{background:C.s2,borderRadius:14,padding:16,marginBottom:16}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+              <div style={{fontSize:14,fontWeight:700}}>Your Account Balance</div>
+              {portfolio&&<button onClick={()=>setCfg(c=>({...c,cap:portfolio.accountValue}))} style={{background:C.gd,color:C.g,border:`1px solid ${C.g}30`,borderRadius:10,padding:"6px 14px",fontSize:12,fontFamily:SA,fontWeight:600,cursor:"pointer"}}> Sync from Exchange (${portfolio.accountValue.toLocaleString()})</button>}
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontSize:24,fontWeight:800,color:C.td}}>$</span>
+              <input type="number" value={cfg.cap} onChange={e=>setCfg(c=>({...c,cap:+e.target.value}))} min={1} style={{background:C.sf,color:C.tx,border:`1px solid ${C.bd}`,borderRadius:12,padding:"12px 16px",fontFamily:SA,fontSize:24,fontWeight:800,width:"100%",outline:"none",letterSpacing:"-0.02em"}}/>
+            </div>
+            {!portfolio&&<div style={{fontSize:12,color:C.td,marginTop:6}}>Enter your real account balance for accurate backtesting. Or connect your exchange on the Exchange tab to sync automatically.</div>}
+          </div>
+
+          {/* Other Config */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:12}}>
+            {[["Position Size %","sz",1,100],["Stop Loss %","sl",0,50],["Take Profit %","tp",0,100]].map(([l,k,mn,mx])=><div key={k}><div style={{fontSize:12,color:C.td,fontWeight:600,marginBottom:4}}>{l}</div><Num value={cfg[k]} onChange={v=>setCfg(c=>({...c,[k]:v}))} min={mn} max={mx} step={k==="sl"||k==="tp"?.5:1} style={{width:"100%",borderRadius:12}}/></div>)}
             <div><div style={{fontSize:12,color:C.td,fontWeight:600,marginBottom:4}}>Direction</div><div style={{display:"flex",gap:6}}>{["long","short"].map(d=><Btn key={d} active={cfg.dir===d} color={d==="long"?C.g:C.r} onClick={()=>setCfg(c=>({...c,dir:d}))} style={{flex:1,textTransform:"uppercase",borderRadius:10,padding:"10px 0"}}>{d}</Btn>)}</div></div>
           </div>
         </Section>
@@ -529,7 +546,7 @@ export default function StrategyLab(){
 
         {/* Hero Stats */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:12,marginBottom:24}}>
-          <Stat label="Total Return" value={`${s.ret>0?"+":""}${s.ret}%`} sub={`$${s.fin.toLocaleString()}`} color={rc} big/>          <Stat label="Win Rate" value={`${s.wr}%`} sub={`${s.wn}W / ${s.ls}L`} color={s.wr>=50?C.g:C.am}/><Stat label="Profit Factor" value={s.pf>=999?"∞":s.pf} color={s.pf>=1.5?C.g:s.pf>=1?C.am:C.r}/><Stat label="Sharpe" value={s.sh} color={s.sh>=1?C.g:C.am}/><Stat label="Max Drawdown" value={`${s.mdd}%`} color={C.r}/><Stat label="Expectancy" value={`$${s.exp}`} sub="per trade" color={s.exp>0?C.g:C.r}/><Stat label="Avg Hold" value={`${s.ah}d`} sub={`${s.n} trades`}/>
+          <Stat label="Total Return" value={`${s.ret>0?"+":""}${s.ret}%`} sub={`$${cfg.cap.toLocaleString()} → $${s.fin.toLocaleString()}`} color={rc} big/>          <Stat label="Win Rate" value={`${s.wr}%`} sub={`${s.wn}W / ${s.ls}L`} color={s.wr>=50?C.g:C.am}/><Stat label="Profit Factor" value={s.pf>=999?"∞":s.pf} color={s.pf>=1.5?C.g:s.pf>=1?C.am:C.r}/><Stat label="Sharpe" value={s.sh} color={s.sh>=1?C.g:C.am}/><Stat label="Max Drawdown" value={`${s.mdd}%`} color={C.r}/><Stat label="Expectancy" value={`$${s.exp}`} sub="per trade" color={s.exp>0?C.g:C.r}/><Stat label="Avg Hold" value={`${s.ah}d`} sub={`${s.n} trades`}/>
           </div>
           <div style={{display:"flex",gap:8,marginBottom:16}}>{[["eq","Equity Curve"],["dd","Drawdown"],["pr","Price + Trades"],["di","P&L Distribution"]].map(([id,l])=><Btn key={id} active={ct===id} onClick={()=>setCt(id)} style={{fontSize:14,borderRadius:12,padding:"10px 20px"}}>{l}</Btn>)}</div>
           <div style={{background:C.sf,border:`1px solid ${C.bd}`,borderRadius:20,padding:24,marginBottom:20}}>
@@ -565,9 +582,12 @@ export default function StrategyLab(){
 
           <div style={{background:C.sf,border:`1px solid ${C.bd}`,borderRadius:10,padding:16,marginBottom:14}}>
             <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
-              {EXCHANGES.map(e=><button key={e.id} onClick={()=>{setExch(e.id);setExError("")}} style={{background:exch===e.id?C.ac+"20":"transparent",border:`1px solid ${exch===e.id?C.ac:C.bd}`,borderRadius:8,padding:"10px 14px",cursor:"pointer",textAlign:"left",minWidth:120}}>
-                <div style={{fontFamily:MO,fontSize:12,color:exch===e.id?C.ac:C.tx,fontWeight:600}}>{e.name}</div>
-                <div style={{fontFamily:MO,fontSize:9,color:C.td}}>{e.note}</div>
+              {EXCHANGES.map(e=><button key={e.id} onClick={()=>{setExch(e.id);setExError("")}} style={{background:exch===e.id?C.ac+"20":"transparent",border:`1px solid ${exch===e.id?C.ac:C.bd}`,borderRadius:12,padding:"12px 16px",cursor:"pointer",textAlign:"left",minWidth:130,display:"flex",alignItems:"center",gap:10}}>
+                {e.logo?<img src={e.logo} alt={e.name} style={{width:24,height:24,borderRadius:6,objectFit:"cover"}}/>:<div style={{width:24,height:24,borderRadius:6,background:C.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12}}>📄</div>}
+                <div>
+                  <div style={{fontFamily:SA,fontSize:14,color:exch===e.id?C.ac:C.tx,fontWeight:700}}>{e.name}</div>
+                  <div style={{fontFamily:SA,fontSize:11,color:C.td}}>{e.note}</div>
+                </div>
               </button>)}
             </div>
 
@@ -741,15 +761,29 @@ export default function StrategyLab(){
       </div>
 
       {/* ═══ FOOTER ═══ */}
-      <div style={{borderTop:`1px solid ${C.bd}`,padding:"32px 24px",textAlign:"center",marginTop:40}}>
+      <div style={{borderTop:`1px solid ${C.bd}`,padding:"40px 24px",textAlign:"center",marginTop:40}}>
         <div style={{maxWidth:600,margin:"0 auto"}}>
-          <div style={{fontSize:18,fontStyle:"italic",color:C.tm,lineHeight:1.7,marginBottom:20,fontFamily:SA,fontWeight:500}}>
+          <div style={{fontSize:18,fontStyle:"italic",color:C.tm,lineHeight:1.7,marginBottom:24,fontFamily:SA,fontWeight:500}}>
             "If you are feeling down and thinking of giving up, then you absolutely should, you fkn pussy"
           </div>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-            <span style={{fontSize:13,color:C.td}}>Built by</span>
-            <a href="https://x.com/barneyxbt" target="_blank" rel="noopener noreferrer" style={{color:C.ac,fontSize:14,fontWeight:700,textDecoration:"none",fontFamily:SA}}>@barneyxbt</a>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:16,marginBottom:12}}>
+            {/* X / Twitter */}
+            <a href="https://x.com/barneyxbt" target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",gap:6,color:C.tm,textDecoration:"none",fontSize:14,fontWeight:600,fontFamily:SA,padding:"8px 14px",borderRadius:10,border:`1px solid ${C.bd}`,background:C.sf,transition:"all .15s"}} onMouseEnter={e=>e.currentTarget.style.borderColor=C.tx} onMouseLeave={e=>e.currentTarget.style.borderColor=C.bd}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              @barneyxbt
+            </a>
+            {/* YouTube */}
+            <a href="https://www.youtube.com/@barneyxbt" target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",gap:6,color:C.tm,textDecoration:"none",fontSize:14,fontWeight:600,fontFamily:SA,padding:"8px 14px",borderRadius:10,border:`1px solid ${C.bd}`,background:C.sf,transition:"all .15s"}} onMouseEnter={e=>e.currentTarget.style.borderColor="#ff0000"} onMouseLeave={e=>e.currentTarget.style.borderColor=C.bd}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#ff0000"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+              YouTube
+            </a>
+            {/* Telegram */}
+            <a href="https://t.me/barneyxbt" target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",gap:6,color:C.tm,textDecoration:"none",fontSize:14,fontWeight:600,fontFamily:SA,padding:"8px 14px",borderRadius:10,border:`1px solid ${C.bd}`,background:C.sf,transition:"all .15s"}} onMouseEnter={e=>e.currentTarget.style.borderColor="#26a5e4"} onMouseLeave={e=>e.currentTarget.style.borderColor=C.bd}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#26a5e4"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+              Telegram
+            </a>
           </div>
+          <div style={{fontSize:12,color:C.td,marginTop:8}}>Free forever · No data collection · Your keys never leave your device</div>
         </div>
       </div>
 
