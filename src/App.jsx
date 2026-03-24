@@ -174,10 +174,21 @@ const ASSETS=[
 const TF_DAYS=[{v:30,l:"30 Days"},{v:90,l:"90 Days"},{v:180,l:"180 Days"},{v:365,l:"1 Year"}];
 
 async function fetchCoinGecko(coinId,days){
-  const url=`https://api.coingecko.com/api/v3/coins/${coinId}/ohlc?vs_currency=usd&days=${days}`;
+  // Use market_chart for better granularity — returns price,vol arrays
+  const url=`https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=${days}&interval=daily`;
   const r=await fetch(url);if(!r.ok)throw new Error(`CoinGecko ${r.status}`);
-  const raw=await r.json(); // [[timestamp, open, high, low, close], ...]
-  return raw.map(c=>{const dt=new Date(c[0]);return{date:dt.toISOString().split("T")[0],ds:`${dt.getMonth()+1}/${dt.getDate()}`,open:+c[1].toFixed(2),high:+c[2].toFixed(2),low:+c[3].toFixed(2),close:+c[4].toFixed(2),volume:Math.floor(Math.random()*5e6+1e6)}}); // CoinGecko OHLC doesn't include volume, we estimate
+  const raw=await r.json();
+  if(!raw.prices||raw.prices.length<5)throw new Error("Not enough data");
+  // Convert to OHLCV — market_chart gives [timestamp, price] arrays
+  // We simulate OHLC from daily prices with some variance
+  return raw.prices.map((p,i)=>{
+    const dt=new Date(p[0]);const price=p[1];
+    const vol=raw.total_volumes?.[i]?.[1]||0;
+    const prevPrice=i>0?raw.prices[i-1][1]:price;
+    const high=Math.max(price,prevPrice)*(1+Math.random()*0.01);
+    const low=Math.min(price,prevPrice)*(1-Math.random()*0.01);
+    return{date:dt.toISOString().split("T")[0],ds:`${dt.getMonth()+1}/${dt.getDate()}`,open:+prevPrice.toFixed(2),high:+high.toFixed(2),low:+low.toFixed(2),close:+price.toFixed(2),volume:Math.floor(vol)}
+  }).slice(1); // skip first since we need prev price
 }
 
 async function fetchHyperliquid(coin,days){
@@ -246,6 +257,65 @@ export default function StrategyLab(){
   const [exConnected,setExConnected]=useState(false);
   const fileRef=useRef(null);
 
+  // Portfolio state
+  const [portfolio,setPortfolio]=useState(null); // {balance, positions, unrealizedPnl, marginUsed, accountValue}
+  const [portLoading,setPortLoading]=useState(false);
+  const [portError,setPortError]=useState("");
+  const portInterval=useRef(null);
+
+  // Fetch Hyperliquid portfolio
+  const fetchPortfolio=useCallback(async(addr)=>{
+    if(!addr||addr.length<10)return;
+    setPortLoading(true);setPortError("");
+    try{
+      // Get clearinghouse state (balance + positions)
+      const [stateR,metaR]=await Promise.all([
+        fetch("https://api.hyperliquid.xyz/info",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"clearinghouseState",user:addr})}),
+        fetch("https://api.hyperliquid.xyz/info",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"meta"})})
+      ]);
+      if(!stateR.ok)throw new Error(`API ${stateR.status}`);
+      const state=await stateR.json();
+      const meta=await metaR.json();
+      const coinMap={};if(meta?.universe)meta.universe.forEach((u,i)=>{coinMap[i]=u.name});
+
+      const marginSummary=state.marginSummary||{};
+      const positions=(state.assetPositions||[]).map(p=>{
+        const pos=p.position||p;
+        const size=parseFloat(pos.szi||0);
+        const entryPx=parseFloat(pos.entryPx||0);
+        const markPx=parseFloat(pos.positionValue||0)/Math.abs(size||1);
+        const unrealized=parseFloat(pos.unrealizedPnl||0);
+        const leverage=parseFloat(pos.leverage?.value||pos.leverage||0);
+        return{coin:pos.coin||coinMap[pos.assetId]||"?",size,entryPx,unrealized:+unrealized.toFixed(2),leverage,side:size>0?"LONG":"SHORT",liqPx:parseFloat(pos.liquidationPx||0),marginUsed:parseFloat(pos.marginUsed||0),returnPct:entryPx>0?+((size>0?(markPx-entryPx)/entryPx:(entryPx-markPx)/entryPx)*100).toFixed(2):0}
+      }).filter(p=>Math.abs(p.size)>0);
+
+      const accountValue=parseFloat(marginSummary.accountValue||0);
+      const totalMarginUsed=parseFloat(marginSummary.totalMarginUsed||0);
+      const totalUnrealized=positions.reduce((s,p)=>s+p.unrealized,0);
+      const withdrawable=parseFloat(marginSummary.withdrawable||0);
+
+      setPortfolio({
+        accountValue:+accountValue.toFixed(2),
+        balance:+(accountValue-totalUnrealized).toFixed(2),
+        withdrawable:+withdrawable.toFixed(2),
+        unrealizedPnl:+totalUnrealized.toFixed(2),
+        marginUsed:+totalMarginUsed.toFixed(2),
+        positions,
+        lastUpdate:new Date().toLocaleTimeString()
+      });
+    }catch(e){setPortError(e.message)}
+    finally{setPortLoading(false)}
+  },[]);
+
+  // Auto-refresh portfolio every 15s when connected to Hyperliquid
+  useEffect(()=>{
+    if(exch==="hyperliquid"&&exKey&&exConnected){
+      fetchPortfolio(exKey);
+      portInterval.current=setInterval(()=>fetchPortfolio(exKey),15000);
+      return()=>clearInterval(portInterval.current);
+    }else{clearInterval(portInterval.current)}
+  },[exch,exKey,exConnected,fetchPortfolio]);
+
   useEffect(()=>{try{const j=localStorage.getItem("sl_journal");if(j)setJEntries(JSON.parse(j))}catch(e){}try{const k=localStorage.getItem("sl_apikey");if(k)setApiKey(k)}catch(e){}try{const t=localStorage.getItem("sl_trades");if(t)setExTrades(JSON.parse(t))}catch(e){}try{const c=localStorage.getItem("sl_code_en");if(c)setCodeEn(c)}catch(e){}try{const c=localStorage.getItem("sl_code_ex");if(c)setCodeEx(c)}catch(e){}},[]);
 
   const saveJ=useCallback((e)=>{setJEntries(e);try{localStorage.setItem("sl_journal",JSON.stringify(e))}catch(ex){}},[]);
@@ -275,7 +345,7 @@ export default function StrategyLab(){
 
   // AI Send
   const sendAI=useCallback(async(cm)=>{const msg=cm||aiMsg;if(!msg.trim()||!apiKey)return;
-  const ctx=JSON.stringify({strategy:{entry:enR,exit:exR,config:cfg},stats:s,mc:mcRes?{median:mcRes.med,p5:mcRes.p5f,p95:mcRes.p95f,probProfit:mcRes.pp,probRuin:mcRes.pr}:null,exchangeStats:exStats,recentTrades:res.trades.slice(-15)});
+  const ctx=JSON.stringify({strategy:{entry:enR,exit:exR,config:cfg},stats:s,mc:mcRes?{median:mcRes.med,p5:mcRes.p5f,p95:mcRes.p95f,probProfit:mcRes.pp,probRuin:mcRes.pr}:null,exchangeStats:exStats,portfolio:portfolio?{accountValue:portfolio.accountValue,unrealizedPnl:portfolio.unrealizedPnl,positions:portfolio.positions,marginUsed:portfolio.marginUsed}:null,recentTrades:res.trades.slice(-15)});
   const nc=[...aiChat,{role:"user",content:msg}];setAiChat(nc);setAiMsg("");setAiLoad(true);
   try{const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,messages:[{role:"user",content:`You are an expert quant trading strategist. Be specific, data-driven, reference actual numbers.\n\nCONTEXT:\n${ctx}\n\nQuestion: ${msg}`}]})});
   const d=await r.json();if(d.error)setAiChat([...nc,{role:"assistant",content:`Error: ${d.error.message}`}]);else{const txt=d.content?.map(b=>b.text||"").join("\n")||"No response";setAiChat([...nc,{role:"assistant",content:txt}])}}catch(e){setAiChat([...nc,{role:"assistant",content:`Error: ${e.message}`}])}finally{setAiLoad(false)}},[aiMsg,apiKey,aiChat,s,enR,exR,cfg,mcRes,res.trades,exStats]);
@@ -422,8 +492,8 @@ export default function StrategyLab(){
 
         {/* EXCHANGE */}
         {pg==="ex"&&<div className="fi">
-          <h2 style={{fontSize:18,fontWeight:700,margin:"0 0 4px"}}>Exchange <span style={{color:C.g}}>Connect</span></h2>
-          <p style={{fontFamily:MO,fontSize:10,color:C.td,margin:"0 0 14px"}}>Import trades automatically from your exchange or via CSV</p>
+          <h2 style={{fontSize:24,fontWeight:800,margin:"0 0 4px",letterSpacing:"-.02em"}}>Exchange <span style={{color:C.g}}>Connect</span></h2>
+          <p style={{fontFamily:SA,fontSize:14,color:C.td,margin:"0 0 20px"}}>Connect your exchange to see your portfolio, open positions, and trade history in real-time</p>
 
           <div style={{background:C.sf,border:`1px solid ${C.bd}`,borderRadius:10,padding:16,marginBottom:14}}>
             <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
@@ -443,12 +513,65 @@ export default function StrategyLab(){
                 {exch!=="hyperliquid"&&<div style={{flex:1,minWidth:200}}><div style={{fontSize:9,color:C.td,fontFamily:MO,marginBottom:3}}>API SECRET</div><input type="password" value={exSecret} onChange={e=>setExSecret(e.target.value)} placeholder="Enter secret" style={{width:"100%",background:C.s2,color:C.tx,border:`1px solid ${C.bd}`,borderRadius:6,padding:"8px 10px",fontFamily:MO,fontSize:11,outline:"none"}}/></div>}
               </div>
               <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                <button onClick={connectExchange} disabled={exLoading} style={{background:C.ac,color:"#fff",border:"none",borderRadius:8,padding:"10px 24px",fontFamily:SA,fontSize:13,fontWeight:600,cursor:exLoading?"wait":"pointer",opacity:exLoading?.6:1}}>{exLoading?"Connecting...":"Connect & Fetch Trades"}</button>
-                <div style={{fontFamily:MO,fontSize:9,color:C.td}}>Your keys stay local — never sent to our servers</div>
+                <button onClick={connectExchange} disabled={exLoading} style={{background:C.ac,color:"#fff",border:"none",borderRadius:12,padding:"12px 28px",fontFamily:SA,fontSize:14,fontWeight:700,cursor:exLoading?"wait":"pointer",opacity:exLoading?.6:1}}>{exLoading?"Connecting...":"Connect & Fetch Portfolio"}</button>
+                <div style={{fontFamily:SA,fontSize:12,color:C.td}}>Your keys stay local — never sent to our servers</div>
               </div>
             </div>}
             {exError&&<div style={{marginTop:10,background:C.rd,border:`1px solid ${C.r}30`,borderRadius:6,padding:10,fontFamily:MO,fontSize:10,color:C.r,lineHeight:1.6}}>{exError}</div>}
           </div>
+
+          {/* ═══ PORTFOLIO DASHBOARD ═══ */}
+          {(portfolio||portLoading)&&<div style={{marginBottom:20}} className="fi">
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+              <h3 style={{fontSize:20,fontWeight:800,margin:0,letterSpacing:"-.02em"}}>Portfolio Overview</h3>
+              <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                {portLoading&&<span style={{fontFamily:MO,fontSize:12,color:C.am}}>Refreshing...</span>}
+                {portfolio?.lastUpdate&&<span style={{fontFamily:MO,fontSize:12,color:C.td}}>Updated {portfolio.lastUpdate}</span>}
+                <button onClick={()=>fetchPortfolio(exKey)} style={{background:C.s2,border:`1px solid ${C.bd}`,borderRadius:10,padding:"6px 14px",color:C.tm,fontFamily:SA,fontSize:13,fontWeight:600,cursor:"pointer"}}>↻ Refresh</button>
+              </div>
+            </div>
+            {portError&&<div style={{background:C.rd,border:`1px solid ${C.r}30`,borderRadius:12,padding:14,fontFamily:MO,fontSize:13,color:C.r,marginBottom:14}}>{portError}</div>}
+
+            {portfolio&&<>
+              {/* Account Value Hero */}
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:12,marginBottom:20}}>
+                <Stat label="Account Value" value={`$${portfolio.accountValue.toLocaleString()}`} color={C.tx} big/>
+                <Stat label="Unrealized P&L" value={`${portfolio.unrealizedPnl>=0?"+":""}$${portfolio.unrealizedPnl.toLocaleString()}`} color={portfolio.unrealizedPnl>=0?C.g:C.r} big/>
+                <Stat label="Available Balance" value={`$${portfolio.withdrawable.toLocaleString()}`} color={C.tx}/>
+                <Stat label="Margin Used" value={`$${portfolio.marginUsed.toLocaleString()}`} sub={portfolio.accountValue>0?`${(portfolio.marginUsed/portfolio.accountValue*100).toFixed(1)}% utilized`:""}/>
+              </div>
+
+              {/* Open Positions */}
+              {portfolio.positions.length>0?<div style={{background:C.sf,border:`1px solid ${C.bd}`,borderRadius:16,overflow:"hidden",marginBottom:20}}>
+                <div style={{padding:"16px 20px",borderBottom:`1px solid ${C.bd}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div style={{fontSize:16,fontWeight:700}}>Open Positions ({portfolio.positions.length})</div>
+                  <div style={{fontSize:13,fontWeight:600,color:portfolio.unrealizedPnl>=0?C.g:C.r}}>Total: {portfolio.unrealizedPnl>=0?"+":""}${portfolio.unrealizedPnl.toLocaleString()}</div>
+                </div>
+                <div style={{overflowX:"auto"}}>
+                  <table style={{width:"100%",borderCollapse:"collapse",fontFamily:SA,fontSize:14}}>
+                    <thead><tr style={{borderBottom:`1px solid ${C.bd}`}}>
+                      {["Asset","Side","Size","Entry Price","Leverage","Unrealized P&L","Return %","Liq. Price"].map(h=><th key={h} style={{padding:"12px 16px",textAlign:"left",color:C.td,fontWeight:600,fontSize:12,textTransform:"uppercase",letterSpacing:".04em"}}>{h}</th>)}
+                    </tr></thead>
+                    <tbody>{portfolio.positions.map((p,i)=><tr key={i} style={{borderBottom:`1px solid ${C.bd}`}}>
+                      <td style={{padding:"14px 16px",fontWeight:700,fontSize:15}}>{p.coin}</td>
+                      <td style={{padding:"14px 16px"}}><span style={{background:p.side==="LONG"?C.gd:C.rd,color:p.side==="LONG"?C.g:C.r,padding:"4px 12px",borderRadius:8,fontWeight:700,fontSize:12}}>{p.side}</span></td>
+                      <td style={{padding:"14px 16px",fontFamily:MO}}>{Math.abs(p.size).toFixed(4)}</td>
+                      <td style={{padding:"14px 16px",fontFamily:MO}}>${p.entryPx.toLocaleString()}</td>
+                      <td style={{padding:"14px 16px"}}><span style={{background:C.s2,padding:"4px 10px",borderRadius:6,fontFamily:MO,fontSize:12,fontWeight:600}}>{p.leverage}x</span></td>
+                      <td style={{padding:"14px 16px",fontFamily:MO,fontWeight:700,fontSize:15,color:p.unrealized>=0?C.g:C.r}}>{p.unrealized>=0?"+":""}${p.unrealized.toLocaleString()}</td>
+                      <td style={{padding:"14px 16px",fontFamily:MO,fontWeight:600,color:p.returnPct>=0?C.g:C.r}}>{p.returnPct>=0?"+":""}{p.returnPct}%</td>
+                      <td style={{padding:"14px 16px",fontFamily:MO,color:C.am}}>{p.liqPx>0?`$${p.liqPx.toLocaleString()}`:"—"}</td>
+                    </tr>)}</tbody>
+                  </table>
+                </div>
+              </div>
+              :<div style={{background:C.sf,border:`1px solid ${C.bd}`,borderRadius:16,padding:32,textAlign:"center",marginBottom:20}}>
+                <div style={{fontSize:24,marginBottom:8}}>📭</div>
+                <div style={{fontSize:15,fontWeight:600,color:C.tm}}>No open positions</div>
+                <div style={{fontSize:13,color:C.td,marginTop:4}}>Your open trades will appear here in real-time</div>
+              </div>}
+            </>}
+          </div>}
 
           {/* Exchange Results */}
           {exTrades.length>0&&exStats&&<div className="fi">
