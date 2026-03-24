@@ -548,6 +548,5 @@ export default function StrategyLab(){
           </div>
         </div>}
       </div>
-    </div>
   </div>
 }
