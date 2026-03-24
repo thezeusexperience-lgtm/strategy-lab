@@ -158,7 +158,7 @@ const Section=({title,children,defaultOpen=true})=>{const[open,setOpen]=useState
 // MAIN APP
 // ═══════════════════════════════════════════════════════
 // ── MARKET DATA FETCHER ──
-const ASSETS=[
+const DEFAULT_ASSETS=[
   {id:"bitcoin",sym:"BTC",name:"Bitcoin"},{id:"ethereum",sym:"ETH",name:"Ethereum"},
   {id:"solana",sym:"SOL",name:"Solana"},{id:"ripple",sym:"XRP",name:"XRP"},
   {id:"dogecoin",sym:"DOGE",name:"Dogecoin"},{id:"cardano",sym:"ADA",name:"Cardano"},
@@ -169,8 +169,39 @@ const ASSETS=[
   {id:"sui",sym:"SUI",name:"Sui"},{id:"arbitrum",sym:"ARB",name:"Arbitrum"},
   {id:"optimism",sym:"OP",name:"Optimism"},{id:"pepe",sym:"PEPE",name:"Pepe"},
   {id:"render-token",sym:"RENDER",name:"Render"},{id:"injective-protocol",sym:"INJ",name:"Injective"},
+  {id:"toncoin",sym:"TON",name:"Toncoin"},{id:"shiba-inu",sym:"SHIB",name:"Shiba Inu"},
+  {id:"stellar",sym:"XLM",name:"Stellar"},{id:"hedera-hashgraph",sym:"HBAR",name:"Hedera"},
+  {id:"cosmos",sym:"ATOM",name:"Cosmos"},{id:"internet-computer",sym:"ICP",name:"Internet Computer"},
+  {id:"filecoin",sym:"FIL",name:"Filecoin"},{id:"aave",sym:"AAVE",name:"Aave"},
+  {id:"the-graph",sym:"GRT",name:"The Graph"},{id:"maker",sym:"MKR",name:"Maker"},
+  {id:"algorand",sym:"ALGO",name:"Algorand"},{id:"fantom",sym:"FTM",name:"Fantom"},
+  {id:"theta-token",sym:"THETA",name:"Theta"},{id:"eos",sym:"EOS",name:"EOS"},
+  {id:"flow",sym:"FLOW",name:"Flow"},{id:"tezos",sym:"XTZ",name:"Tezos"},
+  {id:"gala",sym:"GALA",name:"Gala"},{id:"decentraland",sym:"MANA",name:"Decentraland"},
+  {id:"the-sandbox",sym:"SAND",name:"The Sandbox"},{id:"axie-infinity",sym:"AXS",name:"Axie Infinity"},
+  {id:"enjincoin",sym:"ENJ",name:"Enjin"},{id:"curve-dao-token",sym:"CRV",name:"Curve"},
+  {id:"1inch",sym:"1INCH",name:"1inch"},{id:"compound-governance-token",sym:"COMP",name:"Compound"},
+  {id:"lido-dao",sym:"LDO",name:"Lido DAO"},{id:"worldcoin-wld",sym:"WLD",name:"Worldcoin"},
+  {id:"fetch-ai",sym:"FET",name:"Fetch.ai"},{id:"bonk",sym:"BONK",name:"Bonk"},
+  {id:"floki",sym:"FLOKI",name:"Floki"},{id:"sei-network",sym:"SEI",name:"Sei"},
+  {id:"celestia",sym:"TIA",name:"Celestia"},{id:"jupiter-exchange-solana",sym:"JUP",name:"Jupiter"},
+  {id:"jito-governance-token",sym:"JTO",name:"Jito"},{id:"pyth-network",sym:"PYTH",name:"Pyth"},
+  {id:"starknet",sym:"STRK",name:"Starknet"},{id:"blur",sym:"BLUR",name:"Blur"},
+  {id:"ondo-finance",sym:"ONDO",name:"Ondo"},{id:"ethena",sym:"ENA",name:"Ethena"},
+  {id:"pendle",sym:"PENDLE",name:"Pendle"},{id:"wormhole",sym:"W",name:"Wormhole"},
+  {id:"kaspa",sym:"KAS",name:"Kaspa"},{id:"mantle",sym:"MNT",name:"Mantle"},
   {id:"_synthetic",sym:"SYN",name:"Synthetic (Random)"}
 ];
+
+// Search CoinGecko for any coin
+async function searchCoins(query){
+  if(!query||query.length<2)return[];
+  try{const r=await fetch(`https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`);
+  if(!r.ok)return[];const d=await r.json();
+  return(d.coins||[]).slice(0,12).map(c=>({id:c.id,sym:c.symbol?.toUpperCase(),name:c.name}))}catch(e){return[]}
+}
+
+const ASSETS=DEFAULT_ASSETS;
 const TF_DAYS=[{v:30,l:"30 Days"},{v:90,l:"90 Days"},{v:180,l:"180 Days"},{v:365,l:"1 Year"}];
 
 async function fetchCoinGecko(coinId,days){
@@ -214,6 +245,21 @@ export default function StrategyLab(){
   const [tfDays,setTfDays]=useState(90);
   const [dataLoading,setDataLoading]=useState(false);
   const [dataSource,setDataSource]=useState("synthetic");
+  const [assetSearch,setAssetSearch]=useState("");
+  const [searchResults,setSearchResults]=useState([]);
+  const [showAssetDrop,setShowAssetDrop]=useState(false);
+  const searchTimeout=useRef(null);
+  const assetDropRef=useRef(null);
+
+  // Search coins on typing
+  useEffect(()=>{
+    if(!assetSearch||assetSearch.length<2){setSearchResults([]);return}
+    clearTimeout(searchTimeout.current);
+    searchTimeout.current=setTimeout(async()=>{const r=await searchCoins(assetSearch);setSearchResults(r)},400);
+  },[assetSearch]);
+
+  // Close dropdown on click outside
+  useEffect(()=>{const h=(e)=>{if(assetDropRef.current&&!assetDropRef.current.contains(e.target))setShowAssetDrop(false)};document.addEventListener("mousedown",h);return()=>document.removeEventListener("mousedown",h)},[]);
   const [preset,setPreset]=useState("gc");
   const [enR,setEnR]=useState(JSON.parse(JSON.stringify(PR.gc.en)));
   const [exR,setExR]=useState(JSON.parse(JSON.stringify(PR.gc.ex)));
@@ -386,11 +432,33 @@ export default function StrategyLab(){
 
       <div style={{width:1,height:32,background:C.bd,margin:"0 4px"}}/>
 
-      {/* Asset Picker */}
+      {/* Asset Picker — Searchable */}
       <div style={{display:"flex",gap:8,alignItems:"center"}}>
-        <select value={asset} onChange={e=>setAsset(e.target.value)} style={{background:C.s2,color:C.tx,border:`1px solid ${C.bd}`,borderRadius:12,padding:"10px 16px",fontFamily:SA,fontSize:15,fontWeight:700,outline:"none",cursor:"pointer"}}>
-          {ASSETS.map(a=><option key={a.id} value={a.id}>{a.sym} — {a.name}</option>)}
-        </select>
+        <div ref={assetDropRef} style={{position:"relative"}}>
+          <button onClick={()=>setShowAssetDrop(!showAssetDrop)} style={{background:C.s2,color:C.tx,border:`1px solid ${showAssetDrop?C.ac:C.bd}`,borderRadius:12,padding:"10px 16px",fontFamily:SA,fontSize:15,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:8,minWidth:180}}>
+            <span>{ASSETS.find(a=>a.id===asset)?.sym||"BTC"}</span>
+            <span style={{color:C.td,fontWeight:500,fontSize:13}}>{ASSETS.find(a=>a.id===asset)?.name||"Bitcoin"}</span>
+            <span style={{color:C.td,fontSize:12,marginLeft:"auto"}}>▾</span>
+          </button>
+          {showAssetDrop&&<div style={{position:"absolute",top:"100%",left:0,marginTop:6,background:C.sf,border:`1px solid ${C.bd}`,borderRadius:16,width:320,maxHeight:420,overflow:"hidden",zIndex:999,boxShadow:"0 16px 48px rgba(0,0,0,.6)"}}>
+            <div style={{padding:12,borderBottom:`1px solid ${C.bd}`}}>
+              <input value={assetSearch} onChange={e=>setAssetSearch(e.target.value)} placeholder="Search any coin..." autoFocus style={{width:"100%",background:C.s2,color:C.tx,border:`1px solid ${C.bd}`,borderRadius:10,padding:"10px 14px",fontFamily:SA,fontSize:14,outline:"none"}}/>
+            </div>
+            <div style={{overflowY:"auto",maxHeight:340}}>
+              {/* Search results first */}
+              {searchResults.length>0&&<><div style={{padding:"8px 14px",fontSize:11,color:C.td,fontWeight:600,textTransform:"uppercase",letterSpacing:".06em"}}>Search Results</div>
+              {searchResults.map(a=><button key={a.id} onClick={()=>{setAsset(a.id);setShowAssetDrop(false);setAssetSearch("")}} style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:asset===a.id?C.ac+"15":"transparent",border:"none",color:C.tx,cursor:"pointer",fontFamily:SA,fontSize:14,textAlign:"left"}}>
+                <span style={{fontWeight:700,minWidth:60}}>{a.sym}</span><span style={{color:C.tm}}>{a.name}</span>
+              </button>)}
+              <div style={{height:1,background:C.bd,margin:"4px 0"}}/></>}
+              {/* Default list (filtered) */}
+              {ASSETS.filter(a=>!assetSearch||a.name.toLowerCase().includes(assetSearch.toLowerCase())||a.sym.toLowerCase().includes(assetSearch.toLowerCase())).map(a=><button key={a.id} onClick={()=>{setAsset(a.id);setShowAssetDrop(false);setAssetSearch("")}} style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:asset===a.id?C.ac+"15":"transparent",border:"none",color:C.tx,cursor:"pointer",fontFamily:SA,fontSize:14,textAlign:"left"}}>
+                <span style={{fontWeight:700,minWidth:60}}>{a.sym}</span><span style={{color:C.tm}}>{a.name}</span>
+                {asset===a.id&&<span style={{marginLeft:"auto",color:C.ac}}>✓</span>}
+              </button>)}
+            </div>
+          </div>}
+        </div>
         <select value={tfDays} onChange={e=>setTfDays(+e.target.value)} style={{background:C.s2,color:C.tx,border:`1px solid ${C.bd}`,borderRadius:12,padding:"10px 14px",fontFamily:SA,fontSize:14,fontWeight:600,outline:"none",cursor:"pointer"}}>
           {TF_DAYS.map(t=><option key={t.v} value={t.v}>{t.l}</option>)}
         </select>
